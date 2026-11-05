@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YumCard: Recipe cards, plated properly</title>
+<meta name="description" content="Turn any recipe into a beautiful, printable card. Free, private, and runs entirely in your browser.">
+<style>
+  :root{
+    --bg:#15120d; --bg2:#1b1712; --text:#ece5d6; --soft:#a89e8c; --gold:#c9a227; --line:rgba(236,229,214,.12);
+    --paper:#f1e9d8; --ink:#241c13; --ink-soft:#5c4f3c; --brass:#b4863f; --brass-deep:#7c5a26; --rule:rgba(124,90,38,.32);
+    --display:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
+    --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1100px 700px at 80% -10%,var(--bg2),var(--bg));color:var(--text);font-family:var(--ui);line-height:1.6;min-height:100vh}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  nav{display:flex;justify-content:space-between;align-items:center;padding:22px clamp(18px,5vw,64px);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-family:var(--display);font-size:22px}
+  .brand svg{width:32px;height:32px}
+  nav a.link{font-size:14px;color:var(--soft);text-decoration:none}
+  nav a.link:hover{color:var(--gold)}
+
+  .btn{display:inline-block;padding:13px 26px;border-radius:3px;background:var(--gold);color:#1b1712;font-weight:600;font-size:15px;text-decoration:none;border:1px solid var(--gold);transition:opacity .15s}
+  .btn:hover{opacity:.88}
+  .btn.quiet{background:transparent;color:var(--text);border-color:var(--line);font-weight:400}
+  .btn.quiet:hover{border-color:var(--gold);color:var(--gold);opacity:1}
+
+  .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(32px,6vw,90px);align-items:center;padding:clamp(40px,8vw,110px) clamp(18px,5vw,64px);max-width:1240px;margin:0 auto}
+  @media(max-width:900px){.hero{grid-template-columns:1fr}}
+  h1{font-family:var(--display);font-weight:500;font-size:clamp(40px,6vw,72px);line-height:1.05;margin:0 0 22px;letter-spacing:-.01em}
+  h1 em{font-style:italic;color:var(--gold)}
+  .lede{font-size:18px;color:var(--soft);max-width:30em;margin:0 0 34px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+
+  /* sample card */
+  .stack{position:relative;max-width:420px;margin:0 auto;width:100%}
+  .stack::before,.stack::after{content:"";position:absolute;inset:0;background:var(--paper);border-radius:2px}
+  .stack::before{transform:rotate(-3deg) translateY(6px);opacity:.5}
+  .stack::after{transform:rotate(2deg) translateY(3px);opacity:.3}
+  .card{position:relative;z-index:1;background:var(--paper);color:var(--ink);padding:34px;border-radius:2px;box-shadow:0 36px 70px -24px rgba(0,0,0,.65);transform:rotate(-.6deg)}
+  .c{position:absolute;width:16px;height:16px;border:0 solid var(--brass)}
+  .c.tl{top:-6px;left:-6px;border-width:2px 0 0 2px}.c.tr{top:-6px;right:-6px;border-width:2px 2px 0 0}
+  .c.bl{bottom:-6px;left:-6px;border-width:0 0 2px 2px}.c.br{bottom:-6px;right:-6px;border-width:0 2px 2px 0}
+  .card small{color:var(--brass-deep);font-size:12px}
+  .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:4px 0 4px;line-height:1.15}
+  .card .sub{font-family:var(--display);font-style:italic;color:var(--ink-soft);font-size:14px;margin:0 0 16px}
+  .stats{display:flex;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:10px 0;margin-bottom:16px}
+  .stats div{flex:1;text-align:center;border-right:1px solid var(--rule);font-family:var(--display);font-size:16px}
+  .stats div:last-child{border:0}
+  .stats span{display:block;font-family:var(--ui);font-size:10.5px;color:var(--ink-soft)}
+  .card ul{list-style:none;margin:0;padding:0;font-size:13px}
+  .card li{padding:5px 0;border-bottom:1px dotted var(--rule)}
+  .card li:last-child{border:0}
+  .card li b{font-weight:600}
+  @media(prefers-reduced-motion:no-preference){
+    .card{animation:settle .9s cubic-bezier(.2,.7,.2,1) both}
+    @keyframes settle{from{opacity:0;transform:translateY(24px) rotate(-3deg)}to{opacity:1;transform:rotate(-.6deg)}}
+  }
+
+  /* how it works */
+  section.how{max-width:1240px;margin:0 auto;padding:0 clamp(18px,5vw,64px) 80px}
+  section.how h2{font-family:var(--display);font-weight:500;font-size:clamp(28px,4vw,40px);margin:0 0 36px;max-width:16em}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+  @media(max-width:800px){.steps{grid-template-columns:1fr}}
+  .step{padding:28px 28px 28px 0;border-right:1px solid var(--line)}
+  .step:last-child{border-right:0}
+  @media(max-width:800px){.step{border-right:0;border-bottom:1px solid var(--line);padding-right:0}}
+  .step .n{font-family:var(--display);color:var(--gold);font-size:30px}
+  .step h3{font-family:var(--display);font-weight:500;font-size:20px;margin:6px 0 8px}
+  .step p{margin:0;color:var(--soft);font-size:15px}
+
+  .closing{border-top:1px solid var(--line);text-align:center;padding:72px 18px}
+  .closing h2{font-family:var(--display);font-weight:500;font-size:clamp(28px,4vw,42px);margin:0 0 12px}
+  .closing p{color:var(--soft);margin:0 0 28px}
+  footer{text-align:center;color:var(--soft);font-size:13px;padding:0 16px 40px}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="#">
+    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="18.5" stroke="#c9a227" stroke-width="1.4"/><path d="M13 13C13 20 13 22 20 27C27 22 27 20 27 13" stroke="#c9a227" stroke-width="1.4"/><line x1="20" y1="27" x2="20" y2="32" stroke="#c9a227" stroke-width="1.4"/></svg>
+    YumCard
+  </a>
+  <a class="link" href="yumcard.html">Open the generator</a>
+</nav>
+
+<header class="hero">
+  <div>
+    <h1>Your recipes deserve <em>better</em> than a screenshot.</h1>
+    <p class="lede">YumCard turns a list of ingredients and a few steps into a handsome, printable recipe card. It runs entirely in your browser, so nothing you write ever leaves your device.</p>
+    <div class="cta">
+      <a class="btn" href="yumcard.html">Make a card</a>
+      <a class="btn quiet" href="#how">See how it works</a>
+    </div>
+  </div>
+
+  <div class="stack" aria-label="Example recipe card">
+    <div class="card">
+      <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+      <small>Italian, dinner</small>
+      <h2>Brown butter tagliatelle</h2>
+      <p class="sub">A weeknight pasta that tastes like a weekend one.</p>
+      <div class="stats">
+        <div>4<span>Serves</span></div>
+        <div>10 min<span>Prep</span></div>
+        <div>20 min<span>Cook</span></div>
+      </div>
+      <ul>
+        <li><b>400 g</b> fresh tagliatelle</li>
+        <li><b>115 g</b> unsalted butter</li>
+        <li><b>8 leaves</b> sage</li>
+        <li><b>½ cup</b> parmesan, finely grated</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<section class="how" id="how">
+  <h2>From scribbled notes to a card worth keeping</h2>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3>Write it down</h3><p>Add a title, ingredients, and steps. The card builds itself as you type.</p></div>
+    <div class="step"><div class="n">2</div><h3>Make it yours</h3><p>Pick a theme, add a photo of the dish, and scale the servings up or down.</p></div>
+    <div class="step"><div class="n">3</div><h3>Keep or share it</h3><p>Print it for the kitchen drawer, or download it as a standalone file to send along.</p></div>
+  </div>
+</section>
+
+<section class="closing">
+  <h2>Got a recipe worth keeping?</h2>
+  <p>It takes about two minutes, and there's nothing to sign up for.</p>
+  <a class="btn" href="yumcard.html">Make a card</a>
+</section>
+
+<footer>Built by its-nihad</footer>
+
+</body>
+</html>
